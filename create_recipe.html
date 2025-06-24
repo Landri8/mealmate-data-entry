@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Create Recipe</title>
+</head>
+
+<body>
+  <h1>Create Recipe</h1>
+  <form id="recipeForm">
+    <label>
+      Title:<br>
+      <input type="text" id="title" required minlength="3" maxlength="50">
+    </label>
+    <br><br>
+    <label>
+      Instructions:<br>
+      <textarea id="instructions" required minlength="10" maxlength="10000"></textarea>
+    </label>
+    <br><br>
+    <label>
+      Images:<br>
+      <input type="file" id="imageFiles" accept="image/*" multiple required>
+    </label>
+    <br><br>
+    <div id="ingredientsSection">
+      <h3>Ingredients</h3>
+      <div class="ingredient-row">
+        <select class="ingredientId" required></select>
+        <input type="text" class="quantity" placeholder="Quantity" required>
+        <input type="text" class="unit" placeholder="Unit" required>
+        <button type="button" class="remove" style="display:none">×</button>
+      </div>
+      <button type="button" id="addIngredient">+ Add Ingredient</button>
+    </div>
+    <br>
+    <button type="submit">Create Recipe</button>
+  </form>
+
+  <pre id="output"></pre>
+
+  <script>
+    const API = 'http://localhost:3000';
+    const form = document.getElementById('recipeForm');
+    const output = document.getElementById('output');
+    const ingredientsSection = document.getElementById('ingredientsSection');
+    const addBtn = document.getElementById('addIngredient');
+
+    let ingredientOptions = '';
+
+    // 1) Fetch once and build options
+    async function loadIngredients() {
+      const res = await fetch(API + '/api/ingredients', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJVU1JlNzJmZDIzZTk2YjA0MDViIiwiZW1haWwiOiJlYWludEBnbWFpbC5jb20iLCJpYXQiOjE3NTA3MDk1MTAsImV4cCI6MTc1MTMxNDMxMH0.B3Rim97ub7iQQuw9GWGbgfOUnV2EmkTOOV9jm-FWcuw'
+        },
+      });
+      const json = await res.json();
+      const list = json.data || [];
+      ingredientOptions = '<option value="">Select…</option>' +
+        list.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+      // populate only the initial row
+      document.querySelector('.ingredient-row select').innerHTML = ingredientOptions;
+    }
+
+    // 2) Clone & populate only the new row
+    function addIngredientRow() {
+      const template = document.querySelector('.ingredient-row');
+      const row = template.cloneNode(true);
+      // reset its fields
+      row.querySelector('select').innerHTML = ingredientOptions;
+      row.querySelector('select').value = '';
+      row.querySelector('.quantity').value = '';
+      row.querySelector('.unit').value = '';
+      row.querySelector('.remove').style.display = 'inline';
+      row.querySelector('.remove').onclick = () => row.remove();
+      ingredientsSection.insertBefore(row, addBtn);
+    }
+
+    addBtn.onclick = addIngredientRow;
+    loadIngredients(); // initial load
+
+    function toBase64(file) {
+      return new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = () => res(reader.result);
+        reader.onerror = rej;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      output.textContent = 'Submitting…';
+
+      const title = document.getElementById('title').value;
+      const instructions = document.getElementById('instructions').value;
+      const files = Array.from(document.getElementById('imageFiles').files);
+      const images = await Promise.all(files.map(toBase64));
+
+      const ingredients = Array.from(document.querySelectorAll('.ingredient-row')).map(row => ({
+        ingredientId: row.querySelector('.ingredientId').value,
+        quantity: row.querySelector('.quantity').value,
+        unit: row.querySelector('.unit').value
+      }));
+
+      try {
+        const res = await fetch(API + '/api/recipes/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJVU1JlNzJmZDIzZTk2YjA0MDViIiwiZW1haWwiOiJlYWludEBnbWFpbC5jb20iLCJpYXQiOjE3NTA3MDk1MTAsImV4cCI6MTc1MTMxNDMxMH0.B3Rim97ub7iQQuw9GWGbgfOUnV2EmkTOOV9jm-FWcuw'
+          },
+          body: JSON.stringify({ title, instructions, images, ingredients })
+        });
+        const json = await res.json();
+        output.textContent = JSON.stringify(json, null, 2);
+      } catch (err) {
+        output.textContent = 'Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+
+</html>

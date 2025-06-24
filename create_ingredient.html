@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Create Ingredient</title>
+</head>
+
+<body>
+    <h1>Create Ingredient</h1>
+    <form id="ingredientForm">
+        <label>
+            Name:<br>
+            <input type="text" id="name" required maxlength="50">
+        </label>
+        <br><br>
+        <label>
+            Image:<br>
+            <input type="file" id="imageFile" accept="image/*" required>
+        </label>
+        <br><br>
+        <button type="submit">Create Ingredient</button>
+    </form>
+
+
+    <pre id="result"></pre>
+
+    <hr>
+
+    <a href="./create_recipe.html">Go To Create Recipe</a>
+
+
+    <script>
+        const form = document.getElementById('ingredientForm');
+        const result = document.getElementById('result');
+
+        function toBase64(file) {
+            return new Promise((res, rej) => {
+                const reader = new FileReader();
+                reader.onload = () => res(reader.result);
+                reader.onerror = rej;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            result.textContent = 'Uploading…';
+            const name = document.getElementById('name').value;
+            const file = document.getElementById('imageFile').files[0];
+
+            try {
+                const base64 = await toBase64(file);
+                const res = await fetch('http://localhost:3000/api/ingredients/create', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJVU1JlNzJmZDIzZTk2YjA0MDViIiwiZW1haWwiOiJlYWludEBnbWFpbC5jb20iLCJpYXQiOjE3NTA3MDk1MTAsImV4cCI6MTc1MTMxNDMxMH0.B3Rim97ub7iQQuw9GWGbgfOUnV2EmkTOOV9jm-FWcuw' 
+                    },
+                    body: JSON.stringify({ name, image: base64 })
+                });
+                const json = await res.json();
+                result.textContent = JSON.stringify(json, null, 2);
+            } catch (err) {
+                result.textContent = 'Error: ' + err.message;
+            }
+        });
+    </script>
+</body>
+
+</html>
