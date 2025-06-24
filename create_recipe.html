@@ -14,16 +14,27 @@
       <input type="text" id="title" required minlength="3" maxlength="50">
     </label>
     <br><br>
+
     <label>
       Instructions:<br>
       <textarea id="instructions" required minlength="10" maxlength="10000"></textarea>
     </label>
     <br><br>
+
+    <label>
+      Category:<br>
+      <select id="categorySelect" required>
+        <option value="">Loading categories…</option>
+      </select>
+    </label>
+    <br><br>
+
     <label>
       Images:<br>
       <input type="file" id="imageFiles" accept="image/*" multiple required>
     </label>
     <br><br>
+
     <div id="ingredientsSection">
       <h3>Ingredients</h3>
       <div class="ingredient-row">
@@ -39,50 +50,21 @@
   </form>
 
   <pre id="output"></pre>
+  <hr>
 
+  <a href="./create_category.html">Go To Create Category</a>
+  <br>
   <a href="./create_ingredient.html">Go To Create Ingredient</a>
-
   <script>
     const API = 'https://af98-2001-fb1-be-7a7f-1990-d287-40af-d10b.ngrok-free.app';
     const form = document.getElementById('recipeForm');
     const output = document.getElementById('output');
-    const ingredientsSection = document.getElementById('ingredientsSection');
     const addBtn = document.getElementById('addIngredient');
+    const ingredientsSection = document.getElementById('ingredientsSection');
+    const categorySelect = document.getElementById('categorySelect');
 
     let ingredientOptions = '';
-
-    // 1) Fetch once and build options
-    async function loadIngredients() {
-      const res = await fetch(API + '/api/ingredients', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJVU1JlNzJmZDIzZTk2YjA0MDViIiwiZW1haWwiOiJlYWludEBnbWFpbC5jb20iLCJpYXQiOjE3NTA3MDk1MTAsImV4cCI6MTc1MTMxNDMxMH0.B3Rim97ub7iQQuw9GWGbgfOUnV2EmkTOOV9jm-FWcuw'
-        },
-      });
-      const json = await res.json();
-      const list = json.data || [];
-      ingredientOptions = '<option value="">Select…</option>' +
-        list.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
-      // populate only the initial row
-      document.querySelector('.ingredient-row select').innerHTML = ingredientOptions;
-    }
-
-    // 2) Clone & populate only the new row
-    function addIngredientRow() {
-      const template = document.querySelector('.ingredient-row');
-      const row = template.cloneNode(true);
-      // reset its fields
-      row.querySelector('select').innerHTML = ingredientOptions;
-      row.querySelector('select').value = '';
-      row.querySelector('.quantity').value = '';
-      row.querySelector('.unit').value = '';
-      row.querySelector('.remove').style.display = 'inline';
-      row.querySelector('.remove').onclick = () => row.remove();
-      ingredientsSection.insertBefore(row, addBtn);
-    }
-
-    addBtn.onclick = addIngredientRow;
-    loadIngredients(); // initial load
+    let categoryOptions = '';
 
     function toBase64(file) {
       return new Promise((res, rej) => {
@@ -93,16 +75,75 @@
       });
     }
 
+    async function loadCategories() {
+      try {
+        const res = await fetch(API + '/api/categories', {
+          headers: {
+            'Content-Type': 'application/json',
+            "ngrok-skip-browser-warning": "69420",
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJVU1JlNzJmZDIzZTk2YjA0MDViIiwiZW1haWwiOiJlYWludEBnbWFpbC5jb20iLCJpYXQiOjE3NTA3MDk1MTAsImV4cCI6MTc1MTMxNDMxMH0.B3Rim97ub7iQQuw9GWGbgfOUnV2EmkTOOV9jm-FWcuw'
+          },
+        });
+        const json = await res.json();
+        const list = json.data || [];
+        categoryOptions = '<option value="">Select…</option>' +
+          list.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+        categorySelect.innerHTML = categoryOptions;
+      } catch (err) {
+        categorySelect.innerHTML = '<option value="">Failed to load</option>';
+      }
+    }
+
+    async function loadIngredients() {
+      try {
+        const res = await fetch(API + '/api/ingredients', {
+          headers: {
+            'Content-Type': 'application/json',
+            "ngrok-skip-browser-warning": "69420",
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJVU1JlNzJmZDIzZTk2YjA0MDViIiwiZW1haWwiOiJlYWludEBnbWFpbC5jb20iLCJpYXQiOjE3NTA3MDk1MTAsImV4cCI6MTc1MTMxNDMxMH0.B3Rim97ub7iQQuw9GWGbgfOUnV2EmkTOOV9jm-FWcuw'
+          },
+        });
+        const json = await res.json();
+        const list = json.data || [];
+        ingredientOptions = '<option value="">Select…</option>' +
+          list.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+        document.querySelector('.ingredient-row select').innerHTML = ingredientOptions;
+      } catch (err) {
+        document.querySelector('.ingredient-row select')
+          .innerHTML = '<option value="">Failed to load</option>';
+      }
+    }
+
+    function addIngredientRow() {
+      const template = document.querySelector('.ingredient-row');
+      const row = template.cloneNode(true);
+      row.querySelector('select').innerHTML = ingredientOptions;
+      row.querySelector('select').value = '';
+      row.querySelector('.quantity').value = '';
+      row.querySelector('.unit').value = '';
+      row.querySelector('.remove').style.display = 'inline';
+      row.querySelector('.remove').onclick = () => row.remove();
+      ingredientsSection.insertBefore(row, addBtn);
+    }
+
+    addBtn.onclick = addIngredientRow;
+
+    loadCategories();
+    loadIngredients();
+
     form.addEventListener('submit', async e => {
       e.preventDefault();
       output.textContent = 'Submitting…';
 
       const title = document.getElementById('title').value;
       const instructions = document.getElementById('instructions').value;
+      const category = categorySelect.value;
       const files = Array.from(document.getElementById('imageFiles').files);
       const images = await Promise.all(files.map(toBase64));
 
-      const ingredients = Array.from(document.querySelectorAll('.ingredient-row')).map(row => ({
+      const ingredients = Array.from(
+        document.querySelectorAll('.ingredient-row')
+      ).map(row => ({
         ingredientId: row.querySelector('.ingredientId').value,
         quantity: row.querySelector('.quantity').value,
         unit: row.querySelector('.unit').value
@@ -113,12 +154,19 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            "ngrok-skip-browser-warning": "69420",
             'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJVU1JlNzJmZDIzZTk2YjA0MDViIiwiZW1haWwiOiJlYWludEBnbWFpbC5jb20iLCJpYXQiOjE3NTA3MDk1MTAsImV4cCI6MTc1MTMxNDMxMH0.B3Rim97ub7iQQuw9GWGbgfOUnV2EmkTOOV9jm-FWcuw'
           },
-          body: JSON.stringify({ title, instructions, images, ingredients })
+          body: JSON.stringify({
+            title, instructions, category, images, ingredients
+          })
         });
         const json = await res.json();
         output.textContent = JSON.stringify(json, null, 2);
+        form.reset();
+        document.querySelectorAll('.ingredient-row').forEach((row, i) => {
+          if (i > 0) row.remove();
+        });
       } catch (err) {
         output.textContent = 'Error: ' + err.message;
       }

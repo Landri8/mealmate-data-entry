@@ -3,67 +3,59 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Create Ingredient</title>
+    <title>Create Category</title>
 </head>
 
 <body>
-    <h1>Create Ingredient</h1>
-    <form id="ingredientForm">
+    <h1>Create Category</h1>
+    <form id="categoryForm">
         <label>
-            Name:<br>
-            <input type="text" id="name" required maxlength="50">
+            Title:<br>
+            <input type="text" id="title" required maxlength="100">
         </label>
         <br><br>
         <label>
-            Image:<br>
-            <input type="file" id="imageFile" accept="image/*" required>
+            Description:<br>
+            <textarea id="description" maxlength="500"></textarea>
         </label>
         <br><br>
-        <button type="submit">Create Ingredient</button>
+        <button type="submit">Create Category</button>
     </form>
-
 
     <pre id="result"></pre>
 
     <hr>
 
-    <a href="./create_category.html">Go To Create Category</a>
-    <br>
     <a href="./create_recipe.html">Go To Create Recipe</a>
-
+    <br>
+    <a href="./create_ingredient.html">Go To Create Ingredient</a>
 
     <script>
-        const form = document.getElementById('ingredientForm');
+        const form = document.getElementById('categoryForm');
         const result = document.getElementById('result');
-
-        function toBase64(file) {
-            return new Promise((res, rej) => {
-                const reader = new FileReader();
-                reader.onload = () => res(reader.result);
-                reader.onerror = rej;
-                reader.readAsDataURL(file);
-            });
-        }
 
         form.addEventListener('submit', async e => {
             e.preventDefault();
-            result.textContent = 'Uploading…';
-            const name = document.getElementById('name').value;
-            const file = document.getElementById('imageFile').files[0];
+            result.textContent = 'Submitting…';
+
+            const payload = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value
+            };
 
             try {
-                const base64 = await toBase64(file);
-                const res = await fetch('https://af98-2001-fb1-be-7a7f-1990-d287-40af-d10b.ngrok-free.app/api/ingredients/create', {
+                const res = await fetch('https://af98-2001-fb1-be-7a7f-1990-d287-40af-d10b.ngrok-free.app/api/categories/create', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         "ngrok-skip-browser-warning": "69420",
                         'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJVU1JlNzJmZDIzZTk2YjA0MDViIiwiZW1haWwiOiJlYWludEBnbWFpbC5jb20iLCJpYXQiOjE3NTA3MDk1MTAsImV4cCI6MTc1MTMxNDMxMH0.B3Rim97ub7iQQuw9GWGbgfOUnV2EmkTOOV9jm-FWcuw'
                     },
-                    body: JSON.stringify({ name, image: base64 })
+                    body: JSON.stringify(payload)
                 });
                 const json = await res.json();
                 result.textContent = JSON.stringify(json, null, 2);
+                form.reset();
             } catch (err) {
                 result.textContent = 'Error: ' + err.message;
             }
