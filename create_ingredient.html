@@ -51,7 +51,7 @@
 
             try {
                 const base64 = await toBase64(file);
-                const res = await fetch('http://localhost:3000/api/ingredients/create', {
+                const res = await fetch('https://af98-2001-fb1-be-7a7f-1990-d287-40af-d10b.ngrok-free.app/api/ingredients/create', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
